@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+    django:
+        build: .
+        command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+        container_name: django
+        volumes:
+          - .:/home/app/microservice:rw 
+        ports:
+            - 8000:8000
+        restart: "on-failure"
+
+        depends_on: 
+            - rabbitmq
+
+    rabbitmq:
+        image: rabbitmq:3.9-management-alpine
+        container_name: microservices-rabbitmq
+        hostname: rabbitlocal         
+        ports: 
+            - 5672:5672
+            - 15672:15672
+        volumes: 
+            - rabbitmq_data:/var/lib/rabbitmq/
+        environment: 
+            - RABBITMQ_DEFAULT_USER=admin
+            - RABBITMQ_DEFAULT_PASS=admin
+            - RABBITMQ_DEFAULT_VHOST=/
+        restart: always
+        networks:
+            - microservices-sync    
+        
+networks:
+  microservices-sync:
+    driver: bridge        
+
+volumes:    
+    rabbitmq_data:
