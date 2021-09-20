@@ -23,12 +23,11 @@ with rabbitmq_conn() as conn:
     queue_codementoring_student = kombu.Queue(
         name='codementoring.students',
         exchange='amq.topic',
-        routing_key='model.student.saved',
+        routing_key='saved',
         channel=conn,
         durable=True
     )
 
-    # declarando parametros do consumidor
     queue_codementoring_student.declare()
 
 
@@ -48,13 +47,23 @@ class NewStudentConsumerStep(bootsteps.ConsumerStep):
     def handle_message(self, data, message):
         try:
             with transaction.atomic():
-                #from app.models import Student
+                from app.models import Student
                 data = json.loads(data)
-                time.sleep(1)
-                print("✔️   ==> Student " +
-                      data['name'] + " salvo com sucesso!")
+
+                Student.objects.update_or_create(
+                    name=data['name'],
+                    last_name=data['last_name'],
+                    email=data['email'],
+                    phone=data['phone'],
+                    active=data['active']
+                )
+
+                time.sleep(0.01)
+                print("✔️   ==> Student " + data['name'] + " salvo com sucesso!")
+
                 settings.ALLOWED_HOSTS.clear()
         except Exception as e:
+            print(e)
             Reject(e, requeue=False)
         message.ack()
 

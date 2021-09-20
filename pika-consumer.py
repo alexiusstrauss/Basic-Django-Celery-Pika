@@ -1,14 +1,8 @@
-import os
-import time
-import pika
-import django
-import json
+import os, time, pika, django, json
+from app.models import Student
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'codementoring.settings')
 django.setup()
-
-from app.models import Student
-
 
 QUEUE = 'codementoring.students'
 
@@ -31,7 +25,7 @@ def save_student(data):
         )
 
     s.save()
-    #time.sleep(1) 
+    time.sleep(0.09) 
     print("✔️   ==> Student " + s.name + " salvo com sucesso!")
 
 
