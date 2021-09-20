@@ -34,7 +34,7 @@ with rabbitmq_conn() as conn:
 class NewStudentConsumerStep(bootsteps.ConsumerStep):
 
     def get_consumers(self, channel):
-        data = [
+        return [
             kombu.Consumer(
                 channel,
                 queues=[queue_codementoring_student],
@@ -42,7 +42,6 @@ class NewStudentConsumerStep(bootsteps.ConsumerStep):
                 accept=['json']
             )
         ]
-        return data
 
     def handle_message(self, data, message):
         try:
