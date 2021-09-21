@@ -25,6 +25,8 @@ with rabbitmq_conn() as conn:
         exchange='amq.topic',
         routing_key='saved',
         channel=conn,
+        queue_arguments={
+        'x-dead-letter-exchange': ''},
         durable=True
     )
 
@@ -34,7 +36,7 @@ with rabbitmq_conn() as conn:
 class NewStudentConsumerStep(bootsteps.ConsumerStep):
 
     def get_consumers(self, channel):
-        data = [
+        return [
             kombu.Consumer(
                 channel,
                 queues=[queue_codementoring_student],
@@ -42,30 +44,32 @@ class NewStudentConsumerStep(bootsteps.ConsumerStep):
                 accept=['json']
             )
         ]
-        return data
+
+    def _process_message(self, data):
+        from app.models import Student
+        data = json.loads(data)
+
+        Student.objects.update_or_create(
+            name=data['name'],
+            last_name=data['last_name'],
+            email=data['email'],
+            phone=data['phone'],
+            active=data['active']
+        )
+
+        print("✔️   ==> Student " + data['name'] + " salvo com sucesso!")
+
+        settings.ALLOWED_HOSTS.clear()
 
     def handle_message(self, data, message):
         try:
             with transaction.atomic():
-                from app.models import Student
-                data = json.loads(data)
-
-                Student.objects.update_or_create(
-                    name=data['name'],
-                    last_name=data['last_name'],
-                    email=data['email'],
-                    phone=data['phone'],
-                    active=data['active']
-                )
-
-                time.sleep(0.01)
-                print("✔️   ==> Student " + data['name'] + " salvo com sucesso!")
-
-                settings.ALLOWED_HOSTS.clear()
+                self._process_message(data)
         except Exception as e:
-            print(e)
             Reject(e, requeue=False)
         message.ack()
+
+
 
 
 app.steps['consumer'].add(NewStudentConsumerStep)

@@ -21,7 +21,6 @@ __pycache__/
 .yarn_cache/*
 !.yarn_cache/.gitkeep
 
-*.sqlite3
 *.sqlite
 *.sql
 !backup.sql
